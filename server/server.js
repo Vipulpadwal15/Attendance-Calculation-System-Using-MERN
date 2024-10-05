@@ -18,21 +18,44 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // QR Code Schema
 const qrCodeSchema = new mongoose.Schema({
-  data: String,
+  data: {
+    type: String,
+    required: [true, 'QR code data is required'], // Custom validation message
+    unique: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const QrCode = mongoose.model('QrCode', qrCodeSchema);
 
 // Endpoint to add QR code details
+// Backend Route for QR Code Scanning
 app.post('/api/qrcodes', async (req, res) => {
+  console.log('Incoming request body:', req.body); // Log the entire request body
   const { data } = req.body;
-  const qrCode = new QrCode({ data });
+  console.log('Received QR Code data:', data);
 
   try {
-    await qrCode.save();
-    res.status(201).json({ message: 'QR code data saved successfully!' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error saving QR code data', error: err });
+      // Check if the QR code data already exists in the database
+      const existingAttendance = await QrCode.findOne({ data });
+      
+      if (existingAttendance) {
+          console.log('Attendance already saved for QR code:', data);
+          return res.status(400).json({ message: 'Attendance already saved' });
+      }
+
+      // Save new attendance
+      const newAttendance = new QrCode({ data });
+      await newAttendance.save();
+      console.log('Attendance saved successfully for QR code:', data);
+
+      return res.status(200).json({ message: 'Attendance saved successfully' });
+  } catch (error) {
+      console.error('Error saving attendance:', error);
+      return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
