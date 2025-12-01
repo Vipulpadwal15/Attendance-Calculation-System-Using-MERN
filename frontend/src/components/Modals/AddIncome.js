@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  Card,
-  Col,
-  Row,
-  Button,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  Select,
-} from "antd";
+import { Button, Modal, Form, Input, DatePicker, Select } from "antd";
 
 function AddIncomeModal({
   isIncomeModalVisible,
@@ -17,11 +7,12 @@ function AddIncomeModal({
   onFinish,
 }) {
   const [form] = Form.useForm();
+
   return (
     <Modal
       style={{ fontWeight: 600 }}
       title="Add Attendance"
-      visible={isIncomeModalVisible}
+      open={isIncomeModalVisible}
       onCancel={handleIncomeCancel}
       footer={null}
     >
@@ -29,7 +20,7 @@ function AddIncomeModal({
         form={form}
         layout="vertical"
         onFinish={(values) => {
-          onFinish(values, "Present");
+          onFinish(values, "present");
           form.resetFields();
         }}
       >
@@ -50,9 +41,7 @@ function AddIncomeModal({
           style={{ fontWeight: 600 }}
           label="Attended Lectures"
           name="amount"
-          rules={[
-            { required: true, message: "Please input the lectures !" },
-          ]}
+          rules={[{ required: true, message: "Please input the lectures!" }]}
         >
           <Input type="number" className="custom-input" />
         </Form.Item>
@@ -60,19 +49,9 @@ function AddIncomeModal({
           style={{ fontWeight: 600 }}
           label="Date"
           name="date"
-          rules={[
-            { required: true, message: "Please select the date!" },
-          ]}
+          rules={[{ required: true, message: "Please select the date!" }]}
         >
           <DatePicker format="YYYY-MM-DD" className="custom-input" />
-        </Form.Item>
-        <Form.Item
-          style={{ fontWeight: 600 }}
-          label=""
-          name="tag"
-          rules={[{ required: true, message: "Please select a tag!" }]}
-        >
-          
         </Form.Item>
         <Form.Item
           style={{ fontWeight: 600 }}
@@ -81,14 +60,12 @@ function AddIncomeModal({
           rules={[{ required: true, message: "Please select a tag!" }]}
         >
           <Select className="select-input-2">
-            <Select.Option value="Present"></Select.Option>
-            
-            {/* Add more tags here */}
+            <Select.Option value="present">Present</Select.Option>
           </Select>
         </Form.Item>
         <Form.Item>
           <Button className="btn btn-blue" type="primary" htmlType="submit">
-            sum Attendance
+            Save Attendance
           </Button>
         </Form.Item>
       </Form>

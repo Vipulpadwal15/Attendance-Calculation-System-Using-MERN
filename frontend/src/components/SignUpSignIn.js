@@ -18,7 +18,24 @@ const SignUpSignIn = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [flag, setFlag] = useState(false);
+  const [role, setRole] = useState("teacher"); // default role
+  const [rollNoInput, setRollNoInput] = useState("");
   const navigate = useNavigate();
+
+  const navigateByRole = async (uid) => {
+    const userRef = doc(db, "users", uid);
+    const snapshot = await getDoc(userRef);
+    const data = snapshot.data();
+    const userRole = data?.role || "teacher";
+
+    if (userRole === "admin") {
+      navigate("/admin");
+    } else if (userRole === "student") {
+      navigate("/student");
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   const createUserDocument = async (user) => {
     setLoading(true);
@@ -32,12 +49,18 @@ const SignUpSignIn = () => {
       const createdAt = new Date();
 
       try {
-        await setDoc(userRef, {
-          name: displayName ? displayName : name,
-          email,
-          photoURL: photoURL ? photoURL : "",
-          createdAt,
-        });
+        await setDoc(
+          userRef,
+          {
+            name: displayName ? displayName : name,
+            email,
+            photoURL: photoURL ? photoURL : "",
+            createdAt,
+            role,
+            rollNo: role === "student" ? rollNoInput : "",
+          },
+          { merge: true }
+        );
         toast.success("Account Created!");
         setLoading(false);
       } catch (error) {
@@ -52,12 +75,12 @@ const SignUpSignIn = () => {
     setLoading(true);
     e.preventDefault();
     try {
-        const result = await createUserWithEmailAndPassword(auth, email, password);
-        const user = result.user;
-        await createUserDocument(user);
-        toast.success("Successfully Signed Up!");
-        setLoading(false);
-        navigate("/scanner"); // Redirect to scanner after successful sign-up
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+      await createUserDocument(user);
+      toast.success("Successfully Signed Up!");
+      setLoading(false);
+      await navigateByRole(user.uid);
     } catch (error) {
         toast.error(error.message);
         console.error("Error signing up with email and password: ", error.message);
@@ -70,11 +93,11 @@ const SignUpSignIn = () => {
     setLoading(true);
     e.preventDefault();
     try {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        const user = result.user;
-        navigate("/scanner"); // Redirect to scanner after successful sign-in
-        toast.success("Logged In Successfully!");
-        setLoading(false);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+      toast.success("Logged In Successfully!");
+      setLoading(false);
+      await navigateByRole(user.uid);
     } catch (error) {
         toast.error(error.message);
         console.error("Error signing in with email and password: ", error.message);
@@ -91,7 +114,7 @@ const SignUpSignIn = () => {
       await createUserDocument(user);
       toast.success("User Authenticated Successfully!");
       setLoading(false);
-      navigate("/QrScanner");
+      await navigateByRole(user.uid);
     } catch (error) {
       setLoading(false);
       toast.error(error.message);
@@ -200,6 +223,31 @@ const SignUpSignIn = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+              </div>
+
+              {role === "student" && (
+                <div className="input-wrapper">
+                  <p>Roll Number</p>
+                  <input
+                    type="text"
+                    placeholder="B001"
+                    value={rollNoInput}
+                    onChange={(e) => setRollNoInput(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="input-wrapper">
+                <p>Role</p>
+                <select
+                  className="custom-input"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
+                  <option value="teacher">Teacher</option>
+                  <option value="student">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
 
               <button type="submit" className="btn">

@@ -12,15 +12,19 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+  .catch((err) => console.error('Mongo connection error:', err));
 
-// QR Code Schema
+// QR Code Schema – represents a single attendance scan (legacy)
 const qrCodeSchema = new mongoose.Schema({
   data: {
     type: String,
-    required: [true, 'QR code data is required'], // Custom validation message
+    required: [true, 'QR code data is required'],
     unique: true,
   },
   createdAt: {
@@ -31,31 +35,53 @@ const qrCodeSchema = new mongoose.Schema({
 
 const QrCode = mongoose.model('QrCode', qrCodeSchema);
 
-// Endpoint to add QR code details
-// Backend Route for QR Code Scanning
+// Mount REST routes for richer attendance model
+const studentRoutes = require('./routes/students');
+const subjectRoutes = require('./routes/subjects');
+const lectureRoutes = require('./routes/lectures');
+const attendanceRoutes = require('./routes/attendance');
+
+app.use('/api/students', studentRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/lectures', lectureRoutes);
+app.use('/api/attendance', attendanceRoutes);
+
+// Create a new attendance scan from QR code
 app.post('/api/qrcodes', async (req, res) => {
-  console.log('Incoming request body:', req.body); // Log the entire request body
   const { data } = req.body;
-  console.log('Received QR Code data:', data);
+
+  if (!data) {
+    return res.status(400).json({ message: 'QR code data is required' });
+  }
 
   try {
-      // Check if the QR code data already exists in the database
-      const existingAttendance = await QrCode.findOne({ data });
-      
-      if (existingAttendance) {
-          console.log('Attendance already saved for QR code:', data);
-          return res.status(400).json({ message: 'Attendance already saved' });
-      }
+    const existingAttendance = await QrCode.findOne({ data });
 
-      // Save new attendance
-      const newAttendance = new QrCode({ data });
-      await newAttendance.save();
-      console.log('Attendance saved successfully for QR code:', data);
+    if (existingAttendance) {
+      return res.status(400).json({ message: 'Attendance already saved' });
+    }
 
-      return res.status(200).json({ message: 'Attendance saved successfully' });
+    const newAttendance = new QrCode({ data });
+    await newAttendance.save();
+
+    return res.status(200).json({
+      message: 'Attendance saved successfully',
+      attendance: newAttendance,
+    });
   } catch (error) {
-      console.error('Error saving attendance:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+    console.error('Error saving attendance:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all attendance scans for dashboard
+app.get('/api/qrcodes', async (req, res) => {
+  try {
+    const attendances = await QrCode.find().sort({ createdAt: 1 });
+    return res.status(200).json(attendances);
+  } catch (error) {
+    console.error('Error fetching attendance:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

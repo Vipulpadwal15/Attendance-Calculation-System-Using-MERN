@@ -2,7 +2,7 @@ import React from "react";
 import { Card, Row } from "antd";
 
 function Cards({
-  currentBalance,
+  totalLectures,
   present,
   leaves,
   showExpenseModal,
@@ -21,8 +21,8 @@ function Cards({
     >
       <Card bordered={true} style={cardStyle}>
         <h2>Total Lectures</h2>
-        <p>{currentBalance}</p>
-        <div class="btn btn-blue" style={{ margin: 0 }} onClick={reset}>
+        <p>{totalLectures}</p>
+        <div className="btn btn-blue" style={{ margin: 0 }} onClick={reset}>
           Reset
         </div>
       </Card>
@@ -31,7 +31,7 @@ function Cards({
         <h2>Attended</h2>
         <p>{present}</p>
         <div
-          class="btn btn-blue"
+          className="btn btn-blue"
           style={{ margin: 0 }}
           onClick={showIncomeModal}
         >

@@ -1,11 +1,14 @@
-// models/Attendance.js
 const mongoose = require('mongoose');
 
-const attendanceSchema = new mongoose.Schema({
-    qrData: { type: String, required: true, unique: true },
-    scannedAt: { type: Date, default: Date.now }
-});
+const attendanceSchema = new mongoose.Schema(
+  {
+    student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+    lecture: { type: mongoose.Schema.Types.ObjectId, ref: 'Lecture', required: true },
+    scannedAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
 
-const Attendance = mongoose.model('Attendance', attendanceSchema);
+attendanceSchema.index({ student: 1, lecture: 1 }, { unique: true });
 
-module.exports = Attendance;
+module.exports = mongoose.model('Attendance', attendanceSchema);

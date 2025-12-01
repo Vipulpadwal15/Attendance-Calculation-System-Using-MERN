@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Card, Row } from "antd";
 import { Line, Pie } from "@ant-design/charts";
 import moment from "moment";
+import axios from "axios";
 import TransactionSearch from "./TransactionSearch";
 import Header from "./Header";
 import AddIncomeModal from "./Modals/AddIncome";
@@ -9,8 +10,7 @@ import AddExpenseModal from "./Modals/AddExpense";
 import Cards from "./Cards";
 import NoTransactions from "./NoTransactions";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "../firebase";
-import { addDoc, collection, getDocs, query } from "firebase/firestore";
+import { auth } from "../firebase";
 import Loader from "./Loader";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -22,37 +22,30 @@ const Dashboard = () => {
   const [isIncomeModalVisible, setIsIncomeModalVisible] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentBalance, setCurrentBalance] = useState(0);
-  const [income, setIncome] = useState(0);
-  const [expenses, setExpenses] = useState(0);
+  const [totalLectures, setTotalLectures] = useState(0);
+  const [present, setPresent] = useState(0);
+  const [leaves, setLeaves] = useState(0);
   const navigate = useNavigate();
 
-  // Process chart data from transactions
+  // Process chart data from attendance transactions
   const processChartData = () => {
     const balanceData = [];
     const spendingData = {};
 
     transactions.forEach((transaction) => {
       const monthYear = moment(transaction.date).format("MMM YYYY");
-      const tag = transaction.tag;
+      const status = transaction.type;
 
-      if (transaction.type === "income") {
-        const existingEntry = balanceData.find((data) => data.month === monthYear);
-        if (existingEntry) {
-          existingEntry.balance += transaction.amount;
-        } else {
-          balanceData.push({ month: monthYear, balance: transaction.amount });
-        }
+      const existingEntry = balanceData.find(
+        (data) => data.month === monthYear
+      );
+      if (existingEntry) {
+        existingEntry.count += transaction.amount;
       } else {
-        const existingEntry = balanceData.find((data) => data.month === monthYear);
-        if (existingEntry) {
-          existingEntry.balance -= transaction.amount;
-        } else {
-          balanceData.push({ month: monthYear, balance: -transaction.amount });
-        }
-
-        spendingData[tag] = (spendingData[tag] || 0) + transaction.amount; // Simplified
+        balanceData.push({ month: monthYear, count: transaction.amount });
       }
+
+      spendingData[status] = (spendingData[status] || 0) + transaction.amount;
     });
 
     const spendingDataArray = Object.keys(spendingData).map((key) => ({
@@ -70,15 +63,6 @@ const Dashboard = () => {
   const handleExpenseCancel = () => setIsExpenseModalVisible(false);
   const handleIncomeCancel = () => setIsIncomeModalVisible(false);
 
-  useEffect(() => {
-    if (!user) {
-      // Redirect to login page if the user is not authenticated
-      navigate("/");
-    } else {
-      fetchTransactions();
-    }
-  }, [user, navigate]); // Include navigate as a dependency
-
   const onFinish = (values, type) => {
     const newTransaction = {
       type,
@@ -91,56 +75,83 @@ const Dashboard = () => {
     setTransactions((prevTransactions) => [...prevTransactions, newTransaction]);
     setIsExpenseModalVisible(false);
     setIsIncomeModalVisible(false);
-    addTransaction(newTransaction);
-    calculateBalance();
+    calculateSummary([...transactions, newTransaction]);
   };
 
-  const calculateBalance = () => {
-    const incomeTotal = transactions.reduce((total, transaction) => {
+  const calculateSummary = (items) => {
+    const presentTotal = items.reduce((total, transaction) => {
       return transaction.type === "present" ? total + transaction.amount : total;
     }, 0);
-    
-    const expensesTotal = transactions.reduce((total, transaction) => {
+
+    const leavesTotal = items.reduce((total, transaction) => {
       return transaction.type === "absent" ? total + transaction.amount : total;
     }, 0);
 
-    setIncome(incomeTotal);
-    setExpenses(expensesTotal);
-    setCurrentBalance(incomeTotal - expensesTotal); // Fixed calculation of current balance
+    setPresent(presentTotal);
+    setLeaves(leavesTotal);
+    setTotalLectures(presentTotal + leavesTotal);
   };
 
-  // Calculate the initial balance, income, and expenses
+  // Recalculate summary whenever transactions change
   useEffect(() => {
-    calculateBalance();
+    calculateSummary(transactions);
   }, [transactions]);
 
-  const addTransaction = async (transaction) => {
-    try {
-      const docRef = await addDoc(collection(db, `users/${user.uid}/transactions`), transaction);
-      console.log("Document written with ID: ", docRef.id);
-      toast.success("Attendance Added!");
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      toast.error("Couldn't mark Attendance");
-    }
-  };
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
-    if (user) {
-      const q = query(collection(db, `users/${user.uid}/transactions`));
-      const querySnapshot = await getDocs(q);
-      const transactionsArray = querySnapshot.docs.map((doc) => doc.data()); // Simplified
+    try {
+      const response = await axios.get("http://localhost:5000/api/qrcodes");
+
+      const transactionsArray = response.data.map((item) => {
+        let parsed = null;
+        try {
+          parsed = JSON.parse(item.data);
+        } catch (e) {
+          // if QR content is not valid JSON, fall back to raw string
+        }
+
+        return {
+          raw: item.data,
+          name: parsed?.name || parsed?.studentName || item.data,
+          rollNo: parsed?.rollNo || "",
+          contact: parsed?.contact || "",
+          type: "present",
+          date: moment(item.createdAt).format("YYYY-MM-DD"),
+          amount: 1,
+          tag: "present",
+        };
+      });
+
       setTransactions(transactionsArray);
-      toast.success("Attendance Fetched!");
+      calculateSummary(transactionsArray);
+      toast.success("Attendance fetched!");
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+      toast.error("Failed to fetch attendance");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+    } else {
+      fetchTransactions();
+    }
+  }, [user, navigate, fetchTransactions]);
+
+  const resetDashboard = () => {
+    setTransactions([]);
+    setPresent(0);
+    setLeaves(0);
+    setTotalLectures(0);
   };
 
   const balanceConfig = {
     data: balanceData,
     xField: "month",
-    yField: "attendanc",
+    yField: "count",
   };
 
   const spendingConfig = {
@@ -157,15 +168,18 @@ const Dashboard = () => {
     flex: 1,
   };
 
+  const attendanceRate =
+    totalLectures > 0 ? Math.round((present / totalLectures) * 100) : 0;
+
   const exportToCsv = () => {
     const csv = unparse(transactions, {
-      fields: ["name", "type", "date", "amount", "tag"],
+      fields: ["name", "rollNo", "contact", "type", "date", "amount", "tag"],
     });
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "transactions.csv";
+    link.download = "attendance.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -174,55 +188,79 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <Header />
-      {loading ? (
-        <Loader />
-      ) : (
-        <>
-          <Cards
-            currentBalance={currentBalance}
-            income={income}
-            expenses={expenses}
-            showExpenseModal={showExpenseModal}
-            showIncomeModal={showIncomeModal}
-            cardStyle={cardStyle}
-          />
+      <div className="dashboard-header">
+        <div>
+          <h1 className="dashboard-title">Attendance Overview</h1>
+          <p className="dashboard-subtitle">
+            Track your total lectures, presence and leaves at a glance.
+          </p>
+        </div>
+        <div
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "999px",
+            background:
+              attendanceRate >= 75 ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)",
+            color: attendanceRate >= 75 ? "#15803d" : "#b91c1c",
+            fontWeight: 600,
+          }}
+        >
+          Attendance: {attendanceRate}%
+        </div>
+      </div>
 
-          <AddExpenseModal
-            isExpenseModalVisible={isExpenseModalVisible}
-            handleExpenseCancel={handleExpenseCancel}
-            onFinish={onFinish}
-          />
-          <AddIncomeModal
-            isIncomeModalVisible={isIncomeModalVisible}
-            handleIncomeCancel={handleIncomeCancel}
-            onFinish={onFinish}
-          />
-          {transactions.length === 0 ? (
-            <NoTransactions />
-          ) : (
-            <Row gutter={16}>
-              <Card bordered={true} style={cardStyle}>
-                <h2>Attendance Statistics</h2>
-                <Line {...balanceConfig} />
-              </Card>
-              <Card bordered={true} style={{ ...cardStyle, flex: 0.45 }}>
-                <h2>Attendance Graph</h2>
-                {spendingDataArray.length === 0 ? (
-                  <p>Seems like you didn't have any leaves till now...!!</p>
-                ) : (
-                  <Pie {...spendingConfig} />
-                )}
-              </Card>
-            </Row>
-          )}
-          <TransactionSearch
-            transactions={transactions}
-            exportToCsv={exportToCsv}
-            fetchTransactions={fetchTransactions}
-            addTransaction={addTransaction}
-          />
-        </>
-      )}
+      <div className="dashboard-content">
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <Cards
+              totalLectures={totalLectures}
+              present={present}
+              leaves={leaves}
+              showExpenseModal={showExpenseModal}
+              showIncomeModal={showIncomeModal}
+              cardStyle={cardStyle}
+              reset={resetDashboard}
+            />
+
+            <AddExpenseModal
+              isExpenseModalVisible={isExpenseModalVisible}
+              handleExpenseCancel={handleExpenseCancel}
+              onFinish={onFinish}
+            />
+            <AddIncomeModal
+              isIncomeModalVisible={isIncomeModalVisible}
+              handleIncomeCancel={handleIncomeCancel}
+              onFinish={onFinish}
+            />
+            {transactions.length === 0 ? (
+              <NoTransactions />
+            ) : (
+              <Row gutter={16}>
+                <Card bordered={true} style={cardStyle}>
+                  <h2>Attendance Trend</h2>
+                  <Line {...balanceConfig} />
+                </Card>
+                <Card bordered={true} style={{ ...cardStyle, flex: 0.45 }}>
+                  <h2>Present vs Absent</h2>
+                  {spendingDataArray.length === 0 ? (
+                    <p>No leaves recorded yet.</p>
+                  ) : (
+                    <Pie {...spendingConfig} />
+                  )}
+                </Card>
+              </Row>
+            )}
+            <TransactionSearch
+              transactions={transactions}
+              exportToCsv={exportToCsv}
+              fetchTransactions={fetchTransactions}
+              addTransaction={() => {}}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };

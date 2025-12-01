@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "./styles.css";
 import { useNavigate } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -13,14 +13,6 @@ function Header() {
     auth.signOut();
     navigate("/");
   }
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/");
-    } else {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
 
   return (
     <div className="navbar">

@@ -1,26 +1,18 @@
 import React from "react";
-import {
-  Card,
-  Col,
-  Row,
-  Button,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  Select,
-} from "antd";
+import { Button, Modal, Form, Input, DatePicker, Select } from "antd";
+
 function AddExpenseModal({
   isExpenseModalVisible,
   handleExpenseCancel,
   onFinish,
 }) {
   const [form] = Form.useForm();
+
   return (
     <Modal
       style={{ fontWeight: 600 }}
       title="Add Attendance"
-      visible={isExpenseModalVisible}
+      open={isExpenseModalVisible}
       onCancel={handleExpenseCancel}
       footer={null}
     >
@@ -28,7 +20,7 @@ function AddExpenseModal({
         form={form}
         layout="vertical"
         onFinish={(values) => {
-          onFinish(values, "leaves");
+          onFinish(values, "absent");
           form.resetFields();
         }}
       >
@@ -49,9 +41,7 @@ function AddExpenseModal({
           style={{ fontWeight: 600 }}
           label="Lectures"
           name="amount"
-          rules={[
-            { required: true, message: "Please input the leaves!" },
-          ]}
+          rules={[{ required: true, message: "Please input the leaves!" }]}
         >
           <Input type="number" className="custom-input" />
         </Form.Item>
@@ -59,9 +49,7 @@ function AddExpenseModal({
           style={{ fontWeight: 600 }}
           label="Date"
           name="date"
-          rules={[
-            { required: true, message: "Please select the date!" },
-          ]}
+          rules={[{ required: true, message: "Please select the date!" }]}
         >
           <DatePicker className="custom-input" format="YYYY-MM-DD" />
         </Form.Item>
@@ -72,10 +60,7 @@ function AddExpenseModal({
           rules={[{ required: true, message: "Please select a tag!" }]}
         >
           <Select className="select-input-2">
-            <Select.Option value="absent">absent</Select.Option>
-            
-           
-            {/* Add more tags here */}
+            <Select.Option value="absent">Absent</Select.Option>
           </Select>
         </Form.Item>
         <Form.Item>

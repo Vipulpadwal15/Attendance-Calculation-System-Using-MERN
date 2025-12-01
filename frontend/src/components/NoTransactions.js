@@ -1,5 +1,6 @@
 import React from "react";
 import transactions from "../assets/transactions.svg";
+
 function NoTransactions() {
   return (
     <div
@@ -12,9 +13,13 @@ function NoTransactions() {
         marginBottom: "2rem",
       }}
     >
-      <img src={transactions} style={{ width: "400px", margin: "4rem" }} />
+      <img
+        src={transactions}
+        alt="No attendance data illustration"
+        style={{ width: "400px", margin: "4rem" }}
+      />
       <p style={{ textAlign: "center", fontSize: "1.2rem" }}>
-        You Have No Data Currently
+        You have no attendance data yet. Start scanning to see insights here.
       </p>
     </div>
   );
