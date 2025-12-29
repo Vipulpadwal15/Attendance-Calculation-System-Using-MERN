@@ -1,0 +1,9 @@
+
+.site-layout .site-layout-background {
+  background: #fff;
+}
+
+/* Custom scrollbar for sider if needed */
+.ant-layout-sider-children::-webkit-scrollbar {
+    width: 6px;
+}

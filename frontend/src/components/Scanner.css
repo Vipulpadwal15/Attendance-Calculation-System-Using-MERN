@@ -1,0 +1,125 @@
+/* General layout for the scanner container */
+.scanner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 40px;
+  background-color: #f0f4f8; /* Light grey-blue background for a modern look */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+  max-width: 600px;
+  margin: 50px auto;
+}
+
+.setup-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.lecture-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Button styling for "Request Camera Permissions" */
+.scanner-btn {
+  padding: 25px 60px; /* Larger padding for a bigger button */
+  font-size: 1.6rem; /* Larger font size */
+  background-color: #4a8bdf; /* Royal blue */
+  color: white;
+  border: none;
+  border-radius: 15px; /* Rounded corners for a modern look */
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transition */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Elevate the button */
+  margin-top: 20px;
+  text-align: center;
+  font-weight: bold; /* Make the text bold */
+}
+
+/* Hover effect for the button */
+.scanner-btn:hover {
+  background-color: #367ac3; /* Slightly darker blue on hover */
+  transform: translateY(-5px); /* Slight hover lift */
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover for depth */
+}
+
+/* Active effect for the button */
+.scanner-btn:active {
+  transform: translateY(2px); /* Push down effect when clicked */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Reduce shadow on click */
+}
+
+/* QR code reader area */
+.qr-reader {
+  width: 600px;
+  height: 600px;
+  margin-top: 30px;
+  border: 2px solid #4a8bdf;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Styling the result area */
+.result-display {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 1.5rem;
+  color: #4a8bdf;
+  font-weight: bold;
+}
+
+/* Success message styling */
+.success-message {
+  color: green;
+}
+
+/* Styling for scan successful text */
+.scan-success-text {
+  color: #28a745;
+  font-size: 1.3rem;
+  margin-top: 20px;
+}
+
+/* Button for navigating to the dashboard */
+.dashboard-btn {
+  margin-top: 20px;
+  padding: 15px 40px; /* Larger button for navigation */
+  font-size: 1.2rem;
+  background-color: #a0006d; /* Eggplant color */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-btn:hover {
+  background-color: #80005a; /* Slightly darker eggplant on hover */
+  transform: translateY(-3px); /* Slight hover lift */
+}
+
+/* Button styling for "Back to Login" */
+.back-btn {
+  margin-top: 20px;
+  padding: 15px 40px; /* Larger button for navigation */
+  font-size: 1.2rem;
+  background-color: #a0006d; /* Eggplant color */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn:hover {
+  background-color: #80005a; /* Slightly darker eggplant on hover */
+  transform: translateY(-3px); /* Slight hover lift */
+}
+
